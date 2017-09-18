@@ -237,10 +237,10 @@ Formally, the motivation of 2nd order approach is to find unmixing matrix $W$ th
 	\end{align*}
 	Then compute eigen value decomposition of $C_x^{(0)}$ where $(C_x)_{ij} = <x_i, x_j>$. Hence,
 	\begin{align*}
-		\boldsymbol{u} &= \Lambda_0^{-1}  \cdot E_0 \boldsymbol{x} \\
+		\boldsymbol{u} &= \Lambda_0^{-1/2}  \cdot E_0 \boldsymbol{x} \\
 		&= M_0 \boldsymbol{x}
 	\end{align*}
-	where $\Lambda_0^{-1}$ is a diagonal of inverse eigen values and and $E_0$ is matrix of eigen vectors.
+	where $\Lambda_0^{-1/2}$ is a diagonal of inverse eigen values and and $E_0$ is matrix of eigen vectors.
 	\item Orthogonal Transformation
 
 	Assume : $\boldsymbol{s} = B\boldsymbol{u}$. We know that 
@@ -389,3 +389,84 @@ For whitened data $\boldsymbol{u}^{(\alpha)}, \alpha=1,..,p$, we have
 One remark is that  \textbf{kurtosis} tends to be very sensitive to outliers.
 
 \subsection{Negentropy}
+$$
+J(\boldsymbol{\hat{s}}) = H_{(\boldsymbol{\hat{s}})}^{\text{Gauss}} - H_{(\boldsymbol{\hat{s}})}
+$$
+
+Properties of $J(\boldsymbol{\hat{s}})$, non-negative and scale-invariant : $J(\alpha \boldsymbol{\hat{s}}) = J(\boldsymbol{\hat{s}}) , \forall \alpha \ne 0$
+
+Computing $J(\boldsymbol{\hat{s}})$ directly requires estimation of density $p(\boldsymbol{\hat{s}})$.  Hence, we shall use \textbf{Nonpolynomial moment} contrast function $G$:
+$$
+J(\boldsymbol{\hat{s}}) \approx (  \langle G(\boldsymbol{\hat{s}}) \rangle_{\mathbb{P}_(\boldsymbol{s})} - \langle G(\boldsymbol{\hat{s}}) \rangle_{\text{Gauss}} ) ^2
+$$
+
+\subsubsection{Choices of Contrast Function}
+\textbf{General Purpose}
+$$ 
+G_1(\boldsymbol{\hat{s}}) = \frac{1}{a} \log \cosh(a\boldsymbol{\hat{s}}) \hspace{0.5cm} G_1'(\boldsymbol{\hat{s}}) = \tanh(a\boldsymbol{\hat{s}}) \hspace{0.5cm} G_1''(\boldsymbol{\hat{s}}) = a(1-\tanh^2(a\boldsymbol{\hat{s}}))
+$$
+\textbf{Good for super Gaussian sources with many outliers}
+$$ 
+G_2(\boldsymbol{\hat{s}}) = -\exp \bigg ( - \frac{\boldsymbol{\hat{s}}^2}{2} \bigg ) \hspace{0.5cm} G_2'(\boldsymbol{\hat{s}}) = \boldsymbol{\hat{s}} \exp \bigg ( - \frac{\boldsymbol{\hat{s}}^2}{2} \bigg ) \hspace{0.5cm} G_2''(\boldsymbol{\hat{s}}) = (1-\boldsymbol{\hat{s}}^2) \exp \bigg ( - \frac{\boldsymbol{\hat{s}}^2}{2} \bigg ) 
+$$
+\textbf{Good for sub-Gaussian sources with few outliers}
+$$ 
+G_3(\boldsymbol{\hat{s}}) =  \frac{1}{4} \boldsymbol{\hat{s}}^4 \hspace{0.5cm} G_3'(\boldsymbol{\hat{s}}) = \boldsymbol{\hat{s}}^3 \hspace{0.5cm} G_3''(\boldsymbol{\hat{s}}) = 3\boldsymbol{\hat{s}}^2
+$$
+
+The optimization problem can be written as :
+$$
+J(\boldsymbol{b}^T\boldsymbol{u}) = \bigg(  \langle G(\boldsymbol{b}^T\boldsymbol{u}) \rangle_{\mathbb{P}_(\boldsymbol{u})} - \langle G(\boldsymbol{\hat{u}}_{\text{Gauss}}) \rangle_{\mathcal{N}_{(0,1)}} \bigg) ^2
+$$
+\subsubsection{Batch Learning}
+\begin{align*}
+	\Delta\boldsymbol{b} &= \epsilon \Bigg \{ \langle G(\boldsymbol{b}^T\boldsymbol{u}) \rangle_{\mathbb{P}_(\boldsymbol{u})} - \langle G(\boldsymbol{\hat{u}}_{\text{Gauss}}) \rangle_{\mathcal{N}_{(0,1)}}  \Bigg \} \langle \boldsymbol{u} G'(\boldsymbol{b}^T\boldsymbol{u}) \rangle_{\mathbb{P}_{(u)}} \\
+	\boldsymbol{b} &\leftarrow \boldsymbol{b}/|\boldsymbol{b}|
+\end{align*}
+
+where $\boldsymbol{b}_0$ is a random unit vector.
+
+\subsubsection{Online Learning}
+\begin{align*}
+	\Delta\boldsymbol{b} &= \epsilon \gamma \langle \boldsymbol{u} G'(\boldsymbol{b}^T\boldsymbol{u}) \rangle_{\mathbb{P}_{(u)}} \\
+	\boldsymbol{b} &\leftarrow \boldsymbol{b}/|\boldsymbol{b}| \\
+	\Delta \gamma &= \eta ( \langle G(\boldsymbol{b}^T\boldsymbol{u}) \rangle_{\mathbb{P}_(\boldsymbol{u})} - \langle G(\boldsymbol{\hat{u}}_{\text{Gauss}}) \rangle_{\mathcal{N}_{(0,1)}}  - \gamma )
+\end{align*}
+
+where $\gamma_0 = 0$.
+
+\subsubsection{Fixed point algorithm (fastICA)}
+\begin{align*}
+	\boldsymbol{b} &= \langle \boldsymbol{u} G'(\boldsymbol{b}^T\boldsymbol{u}) \rangle - \langle G''(\boldsymbol{b}^T\boldsymbol{u}) \rangle  \boldsymbol{b} \\
+	\boldsymbol{b} &\leftarrow \boldsymbol{b}/|\boldsymbol{b}|
+\end{align*}
+
+\textbf{One Unit Neural Network Implementation}
+\begin{enumerate}
+	\item whiten data $\boldsymbol{u}^{(\alpha)} = \Lambda_0^{-1/2}\text{E}^Tx_{\text{centered}}^{(\alpha)} $ 
+	\item choose a random unit vector $\boldsymbol{b}$
+	\item Loop
+\begin{align*}
+	\boldsymbol{b} &\leftarrow \frac{1}{p} \Bigg \{ \sum_{\alpha=1}^{p} \boldsymbol{u}^{(\alpha)} G'(\boldsymbol{b}^T\boldsymbol{u}^{(\alpha)}) - \boldsymbol{b}\sum_{\alpha=1}^{p} \boldsymbol{u}^{(\alpha)} G''(\boldsymbol{b}^T\boldsymbol{u}^{(\alpha)})  \Bigg \} \\
+		\boldsymbol{b} &\leftarrow \boldsymbol{b}/|\boldsymbol{b}|
+\end{align*}
+\end{enumerate}
+and $\boldsymbol{w}$ for original centered data is $\boldsymbol{w} = \text{E} \Lambda^{-1/2} \boldsymbol{b}$.
+
+\textbf{Multiple Units Neural Network Implementation}
+\begin{enumerate}
+	\item whiten data $\boldsymbol{u}^{(\alpha)} = \Lambda_0^{-1/2}\text{E}^Tx_{\text{centered}}^{(\alpha)} $ 
+	\item choose a random orthogonal matrix $B = (\boldsymbol{b}_1, \dots, \boldsymbol{b}_N)$.
+	\item Outer Loop
+	\item Inner Loop for all $i$
+\begin{align*}
+	\boldsymbol{b}_i &\leftarrow \frac{1}{p} \Bigg \{ \sum_{\alpha=1}^{p} \boldsymbol{u}^{(\alpha)} G'(\boldsymbol{b}_i^T\boldsymbol{u}^{(\alpha)}) - \boldsymbol{b}_i\sum_{\alpha=1}^{p} \boldsymbol{u}^{(\alpha)} G''(\boldsymbol{b}^T_i\boldsymbol{u}^{(\alpha)})  \Bigg \} 
+\end{align*}
+\item End inner loop and do orthogonalization
+\begin{align*}
+	B &\leftarrow B / \max_i |\boldsymbol{b}_i| \\
+	B &\leftarrow (B B^T)^{-\frac{1}{2}} B
+\end{align*}
+\end{enumerate}
+and $W$ for original centered data is $W = \text{E} \Lambda^{-1/2} \boldsymbol{b}$.
+

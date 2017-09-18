@@ -1,0 +1,366 @@
+\chapter{Probability Density Estimation}
+
+Density Estimation is important because if $P(x)$ is known, we can easily compute moments of $x$.
+
+There are 2 approaches to estimate density, namely
+\begin{enumerate}
+	\item \textbf{Nonparametric} : histogram-based or kernel-based
+	\item \textbf{Parametric} : Gaussian densities
+\end{enumerate}
+
+\section{Nonparametric Methods}
+\subsection{Gliding Histogram}
+
+This approach finds $\hat{P}	(\boldsymbol{x})$ by counting number of points in volume centered by $\boldsymbol{x}$.
+
+
+\begin{align*}
+H(\boldsymbol{u}) = \begin{cases}
+	1, \ |u_j| < \frac{1}{2} \ \forall j \in 1,\dots,n  \\
+0 ,\ \text{otherwise}
+\end{cases}	
+\end{align*}
+where $n$ is no. of dimensions of $\boldsymbol{u}$.
+
+Given observations $\boldsymbol{x}^{(\alpha)} \in \mathbb{R}^n, \alpha \in 1,\dots, p$.
+We can derive : 
+\begin{align*}
+	\hat{P}(\boldsymbol{x}) = \frac{1}{h^n} \cdot \frac{1}{p} \sum_{\alpha=1}^{p} H\bigg( \frac{\boldsymbol{x} -\boldsymbol{x}^{(\alpha)} }{h} \bigg)
+\end{align*}
+where $h$ is width of the counting volume and $\frac{1}{h^n}$ plays a normalization role.
+
+One remark of Gliding Histogram is the \textbf{discontinuity} of the estimated density.
+
+\subsection{Gaussian Kernel}
+Instead of relying on count of observations in volume ( Histogram Kernel), we can apply a kernel computation, for example Gaussian Kernel.
+
+\begin{align*}
+H(\boldsymbol{u}) &= \frac{1}{ (2\pi )^{\frac{n}{2}} }\exp{ \bigg ( - \frac{\boldsymbol{u}^2}{2} \bigg ) }  \\
+\hat{P}(\boldsymbol{x}) &= \frac{1}{h^n} \cdot \frac{1}{p} \sum_{\alpha=1}^{p} H\bigg( \frac{\boldsymbol{x} -\boldsymbol{x}^{(\alpha)} }{h}  \bigg ) \\
+&= \frac{1}{h^n} \cdot \frac{1}{p} \sum_{\alpha=1}^{p} \frac{1}{ (2\pi )^{\frac{n}{2}} }\exp{ \bigg ( - \frac{(\boldsymbol{x} -\boldsymbol{x}^{(\alpha)})^2}{2h^2} \bigg ) }  \\
+&= \frac{1}{p} \sum_{\alpha=1}^{p} \frac{1}{ (2\pi h^2 )^{\frac{n}{2}} }\exp{ \bigg ( - \frac{(\boldsymbol{x} -\boldsymbol{x}^{(\alpha)})^2}{2h^2} \bigg ) } 
+\end{align*}
+
+where $h$ is width of the kernel.
+
+$$
+\text{smoothness of estimated density} \propto h
+$$
+small $h$ $\rightarrow $ non smooth estimation ( kind of overfitting )\\
+large $h$ $\rightarrow $ smooth estimation ( could be underfitting )
+
+\section{Parametric Methods}
+
+We assume that observations $x^{(\alpha)} \in \mathbb{R}^n, \alpha=1,\dots, p$ are generated from a model. The goal here is to find a parameterized model via $\boldsymbol{w}$ parameters ($\hat{P}(\boldsymbol{x};\boldsymbol{w} )$)  s.t. 
+$$
+P( \boldsymbol{x}  ) = \hat{P} ( \boldsymbol{x}; \boldsymbol{w} )
+$$
+
+Using Kullback-Leibler Divergence 
+\begin{align*}
+D_{KL} \bigg [ P( \boldsymbol{x}  ), \hat{P} ( \boldsymbol{x}; \boldsymbol{w} )  \bigg] &= \int d\boldsymbol{x} P( \boldsymbol{x}  ) \ln \frac{P( \boldsymbol{x}  )}{ \hat{P} ( \boldsymbol{x}; \boldsymbol{w} )   } \\
+&\stackrel{!}{=}	 \min
+\end{align*}
+
+Nothing that $D_{KL} \ge 0$ and $D_{KL} = 0$ iff $P( \boldsymbol{x}  ) = \hat{P} ( \boldsymbol{x}; \boldsymbol{w} )$.
+
+Therefore, 
+\begin{align*}
+	\boldsymbol{w}^* &= \underset{\boldsymbol{w}}{\text{argmin}} \bigg \{  \int d\boldsymbol{x} P( \boldsymbol{x}  ) \ln \frac{P( \boldsymbol{x}  )}{ \hat{P} ( \boldsymbol{x}; \boldsymbol{w} )   }   \bigg \}\\
+	&= \underset{\boldsymbol{w}}{\text{argmin}} \bigg \{  \int d\boldsymbol{x} P( \boldsymbol{x}  ) \ln P( \boldsymbol{x}  ) - \int d\boldsymbol{x} P( \boldsymbol{x}  ) \ln \hat{P} ( \boldsymbol{x}; \boldsymbol{w} )  \bigg \}\\
+		&= \underset{\boldsymbol{w}}{\text{argmin}} \bigg \{  - \int d\boldsymbol{x} P( \boldsymbol{x}  ) \ln \hat{P} ( \boldsymbol{x}; \boldsymbol{w} )  \bigg \}\\
+		&= \underset{\boldsymbol{w}}{\text{argmin}} \bigg \{ E^G \bigg \}
+\end{align*}
+Using Empirical Risk Minimization (ERM), we can approximate expectation $E^G$ using empirical average. As a result, the training cost $E^T$ is
+\begin{align*}
+	E^T &= -\frac{1}{p} \sum_{\alpha =1 }^{p} \ln \hat{P} ( \boldsymbol{x}^{(\alpha)}; \boldsymbol{w} )  \\
+	&= \frac{1}{p} \sum_{\alpha =1 }^{p} -\ln \hat{P} ( \boldsymbol{x}^{(\alpha)}; \boldsymbol{w} )\\
+	&= \frac{1}{p} \sum_{\alpha =1 }^{p} e^{(\alpha)}_{[\boldsymbol{w}]}\\
+	&\stackrel{!}{=} \min
+\end{align*}
+Using SGD, we can update $\boldsymbol{w}$ as follow
+\begin{align*}
+	\boldsymbol{w} &\leftarrow \boldsymbol{w} - \eta \nabla_{\boldsymbol{w}} E^T \tag*{(batch-learning)}\\
+		\boldsymbol{w} &\leftarrow \boldsymbol{w} - \eta \nabla_{\boldsymbol{w}} e^{(\alpha)}_{[\boldsymbol{w}]}  \tag*{(online-learning)}
+\end{align*}
+There are several approches to validate quality of model, e.g. test-set, cross-validation set.
+Overfitting, $E^T$ low but $E^G$ high.
+
+Another way to derive this learning procedure is to look at \textbf{likelihood function}. The likelihood of a model is the probability that the model generates the given observations with iid assumption.
+\begin{align*}
+	\hat{P}( \{ \boldsymbol{x}^{(\alpha)} \}; \boldsymbol{w} ) &= \prod_{\alpha=1}^{p} 	\hat{P}( \boldsymbol{x}^{(\alpha)} ; \boldsymbol{w} ) \\
+	&\stackrel{!}{=} \max
+\end{align*}
+
+\begin{align*}
+	\boldsymbol{w}^* &= \underset{\boldsymbol{w}} {\text{argmax}} \bigg \{  \prod_{\alpha=1}^{p} 	\hat{P}( \boldsymbol{x}^{(\alpha)} ; \boldsymbol{w} )   \bigg \} \\
+	&= \underset{\boldsymbol{w}} {\text{argmax}} \bigg \{  \ln \prod_{\alpha=1}^{p} 	\hat{P}( \boldsymbol{x}^{(\alpha)} ; \boldsymbol{w} )   \bigg \} \\
+	&= \underset{\boldsymbol{w}} {\text{argmax}} \bigg \{  \sum_{\alpha=1}^{p} \ln \hat{P}( \boldsymbol{x}^{(\alpha)} ; \boldsymbol{w} )   \bigg \} \\
+	&= \underset{\boldsymbol{w}} {\text{argmin}} \bigg \{  -\sum_{\alpha=1}^{p} \ln \hat{P}( \boldsymbol{x}^{(\alpha)} ; \boldsymbol{w} )   \bigg \} \\
+\end{align*}
+
+\subsection{Multivariate Gaussian}
+\begin{align*}
+	\hat{P} \big( \{ \boldsymbol{x}^{(\alpha)} \} ; \boldsymbol{\mu}, \boldsymbol{\Sigma} \big) &= \Bigg( \frac{1}{\sqrt{(2\pi)^n \det \boldsymbol{\Sigma}}} \Bigg)^p \cdot \prod_{\alpha=1}^p \exp{\Bigg( - \frac{1}{2} \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big)^T \boldsymbol{\Sigma}^{-1} \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big) \Bigg) }
+\end{align*}
+
+Hence, 
+
+\begin{align*}
+	E^T_{[ \boldsymbol{\mu}, \boldsymbol{\Sigma} ]} &= -\ln \hat{P} \big( \{ \boldsymbol{x}^{(\alpha)} \} ; \boldsymbol{\mu}, \boldsymbol{\Sigma} \big)  \\
+	&= -\ln \Bigg( \frac{1}{\sqrt{(2\pi)^n \det \boldsymbol{\Sigma}}} \Bigg)^p  -\ln \prod_{\alpha=1}^p \exp{\Bigg( - \frac{1}{2} \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big)^T \boldsymbol{\Sigma}^{-1} \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big) \Bigg) } \\
+	&= -\ln \bigg( (2\pi)^n \det \boldsymbol{\Sigma} \bigg)^{-\frac{p}{2}}  -\sum_{\alpha=1}^p \Bigg( - \frac{1}{2} \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big)^T \boldsymbol{\Sigma}^{-1} \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big) \Bigg) \\
+	&= \frac{p}{2}\ln \bigg( (2\pi)^n \det \boldsymbol{\Sigma} \bigg)  + \frac{1}{2}\sum_{\alpha=1}^p \Bigg(  \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big)^T \boldsymbol{\Sigma}^{-1} \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big) \Bigg) \\
+	&= \frac{pn}{2}\ln (2\pi) + \frac{p}{2} \ln (\det \boldsymbol{\Sigma} )  + \frac{1}{2}\sum_{\alpha=1}^p \Bigg(  \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big)^T \boldsymbol{\Sigma}^{-1} \big( \boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu} \big) \Bigg) \\
+\end{align*}
+
+\begin{align*}
+	\frac{ \partial	E^T_{[ \boldsymbol{\mu}, \boldsymbol{\Sigma} ]}}{ \partial \boldsymbol{\mu}} =0 &\Rightarrow \boldsymbol{\mu}^* = \frac{1}{p} \sum_{\alpha=1}^{p}\boldsymbol{x}^{(\alpha)}\\
+		\frac{ \partial	E^T_{[ \boldsymbol{\mu}, \boldsymbol{\Sigma} ]}}{ \partial \boldsymbol{\Sigma}} =0 &\Rightarrow \boldsymbol{\Sigma}^* = \frac{1}{p} \sum_{\alpha=1}^{p}(\boldsymbol{x}^{(\alpha)}-\boldsymbol{\mu}^*)(\boldsymbol{x}^{(\alpha)}-\boldsymbol{\mu}^*)^T
+\end{align*}
+Noting that $\boldsymbol{\mu}^*$ is unbiased but $\boldsymbol{\Sigma}^*$ is biased estimator.
+
+\subsection{Gaussian Mixture Model}
+Here we assume that data is generated from various sources. Formally, 
+$$
+P(\boldsymbol{x}) = \sum_{q=1}^{M} P(\boldsymbol{x}|q)P(q)
+$$
+where
+\begin{enumerate}
+	\item $\boldsymbol{x} \in \mathbb{R}^d$.
+	\item $P(q)$ is a mixture parameter that component $q$ creates a data point
+	\item $P(\boldsymbol{x}|q)$ is probability that $\boldsymbol{x}$ is created by component $q$.
+	
+	There are several choices of model that we can use for $P(\boldsymbol{x}|q)$. One popular choice is a Gaussian. 
+\begin{align*}
+		P(\boldsymbol{x}|q) &= \mathcal{N}(\boldsymbol{x}; \boldsymbol{w}_q, \sigma_q^2 ) \\
+		&= \frac{1}{(2\pi\sigma^2)^{d/2}}\exp{ \bigg( - \frac{(\boldsymbol{x}-\boldsymbol{w}_q)^2}{2\sigma^2_q} \bigg) }
+\end{align*}
+
+\end{enumerate}
+
+
+Hence, parameters to determine for this kind of mixture model are $P(q), \boldsymbol{w}_q, \sigma^2_q$.
+
+Using principle of maximum likelihood, we have
+
+\begin{align*}
+	P(\{ \boldsymbol{x}^{(\alpha)} \}) &=\prod_{\alpha=1}^{p} \sum_{q=1}^{M} P(\boldsymbol{x}|q)P(q) \\
+	&= \prod_{\alpha=1}^{p} \sum_{q=1}^{M} \mathcal{N}(\boldsymbol{x}^{(\alpha)}; \boldsymbol{w}_q, \sigma_q^2) P(q) \\
+	&\stackrel{!}{=} \max
+\end{align*}
+Hence,
+\begin{align*}
+	\{ \boldsymbol{w}, \boldsymbol{\sigma} \} &= \underset{ \{\boldsymbol{w}, \boldsymbol{\sigma}\}}{\text{argmax}} \prod_{\alpha=1}^{p} \sum_{q=1}^{M} \mathcal{N}(\boldsymbol{x}^{(\alpha)}; \boldsymbol{w}_q, \sigma_q^2) P(q) \\
+	&= \underset{ \{\boldsymbol{w}, \boldsymbol{\sigma}\}}{\text{argmax}} \sum_{\alpha=1}^{p}  \ln\sum_{q=1}^{M} \mathcal{N}(\boldsymbol{x}^{(\alpha)}; \boldsymbol{w}_q, \sigma_q^2) P(q) \\
+	&= - \underset{ \{\boldsymbol{w}, \boldsymbol{\sigma}\}}{\text{argmin}} \sum_{\alpha=1}^{p}  \ln\sum_{q=1}^{M} \mathcal{N}(\boldsymbol{x}^{(\alpha)}; \boldsymbol{w}_q, \sigma_q^2) P(q) \\
+\end{align*}
+
+\subsubsection{Relation of Soft-Clustering method}
+Assumptions:
+\begin{enumerate}
+	\item We have $M$ Gaussian components.
+	\item $\sigma_q^2 = \sigma^2 := \frac{1}{\beta}$ for all components.
+	\item Constant mixture parameter $P(q) = \frac{1}{M}$.
+\end{enumerate}
+
+We can compute posterior that $\boldsymbol{x}$ is created by  component $q$ via :
+\begin{align*}
+	P(q| \boldsymbol{x}) &= \frac{ P(\boldsymbol{x} | q)P(q) }{P(\boldsymbol{x}) } 
+\\
+	&= \frac{ \frac{1}{M} \cdot \mathcal{N}(\boldsymbol{x}; \boldsymbol{w}_q, \sigma_q^2 )  }{ \sum_{\gamma=1}^{M} \frac{1}{M} \cdot \mathcal{N}(\boldsymbol{x}; \boldsymbol{w}_\gamma, \sigma_\gamma^2 )  } \\
+	&= \frac{  \mathcal{N}(\boldsymbol{x}; \boldsymbol{w}_q, \sigma_q^2 )  }{ \sum_{\gamma=1}^{M}  \mathcal{N}(\boldsymbol{x}; \boldsymbol{w}_\gamma, \sigma_\gamma^2 )  } 
+\end{align*}
+
+Hence, the objective function is reduced to 
+\begin{align*}
+& - \text{argmin}\sum_{\alpha=1}^{p} \ln \sum_{q=1}^{M} \mathcal{N}(\boldsymbol{x}^{(\alpha)}; \boldsymbol{w}_q, \sigma_q^2) P(q) \\
+	& - \text{argmin} \sum_{\alpha=1}^{p} \ln \frac{1}{M}  \sum_{q=1}^{M} \mathcal{N}(\boldsymbol{x}^{(\alpha)}; \boldsymbol{w}_q, \sigma_q^2) \\
+	&- \text{argmin} \sum_{\alpha=1}^{p} \ln  \Bigg \{  \frac{1}{M} \sum_{q=1}^{M} \bigg( \frac{\beta}{2\pi} \bigg)^{d/2}\exp{ \bigg( - \frac{\beta (\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_q)^2}{2} \bigg) }  \Bigg \} \\
+		&- \text{argmin} \sum_{\alpha=1}^{p} \ln  \Bigg \{  \frac{1}{M} \bigg( \frac{\beta}{2\pi} \bigg)^{d/2}  \sum_{q=1}^{M} \exp{ \bigg( - \frac{\beta (\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_q)^2}{2} \bigg) }  \Bigg \} \\
+		&- \text{argmin} \sum_{\alpha=1}^{p} \ln \Bigg \{ \sum_{q=1}^{M} \exp{ \bigg( - \frac{\beta (\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_q)^2}{2} \bigg) } \Bigg\} + \text{const}(\beta, M)
+\end{align*}
+
+Given $$E^T = - \sum_{\alpha=1}^{p} \ln \Bigg \{ \sum_{q=1}^{M} \exp{ \bigg( - \frac{\beta}{2} (\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_q)^2 \bigg) } \Bigg\}$$
+We have : 
+\begin{align*}
+	\frac{\partial E^T}{\partial \boldsymbol{w}_r} &= - \sum_{\alpha=1}^{p} \ln \Bigg \{ \sum_{q=1}^{M} \exp{ \bigg( - \frac{\beta}{2} (\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_q)^2 \bigg) } \Bigg\} \\
+	&=  - \sum_{\alpha=1}^{p}   \frac{ \exp{ \bigg( - \frac{\beta}{2} (\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_r)^2 \bigg) } }{ \sum_{q=1}^{M} \exp{ \bigg( - \frac{\beta}{2} (\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_q)^2 \bigg) } } \beta(\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_r) \\
+	&=  - \sum_{\alpha=1}^{p}   P(r| \boldsymbol{x}^{(\alpha)} ) \beta(\boldsymbol{x}^{(\alpha)}-\boldsymbol{w}_r) \\
+	&\stackrel{!}{=} 0 
+\end{align*}
+
+Hence,
+\begin{align*}
+	\boldsymbol{w}_r &= \frac{ \sum_{\alpha=1}^{p}   P(r| \boldsymbol{x}^{(\alpha)} ) \boldsymbol{x}^{(\alpha)}}{ \sum_{\alpha=1}^{p}   P(r| \boldsymbol{x}^{(\alpha)} ) }  \\
+\end{align*}
+
+\textbf{New interpretation of Soft-Clustering}
+\begin{enumerate}
+	\item All clusters have the same width $\sigma^2 = \frac{1}{\beta}$.
+	\item and same number of data points $P(q) = \frac{1}{M}$.
+\end{enumerate}
+
+\textbf{Mixture Models ( an extension of soft-clustering )}
+ \begin{enumerate}
+ 	\item each cluster has different width $\sigma_q^2$. and number of points $P(q)$.
+ \end{enumerate}
+ 
+ 
+ \subsubsection{Optimization of Gaussian Mixture Model}
+ We know that 
+ $$
+ E^T = - \sum_{\alpha=1}^{p} \ln \bigg( \sum_{q=1}^{M} P( \boldsymbol{x}^{(\alpha)} |q) P(q) \bigg) \stackrel{!}{=} \min	
+ $$
+ 
+ \begin{align*}
+ \frac{\partial }{\partial \boldsymbol{w}_r}  P( \boldsymbol{x}^{(\alpha)} |r) &= \frac{ (\boldsymbol{x} - \boldsymbol{w}_r )}{\sigma^2}P( \boldsymbol{x}^{(\alpha)} | r ) \\
+ \frac{\partial }{\partial \sigma_r}  P( \boldsymbol{x}^{(\alpha)} |r) &= \bigg \{ -\frac{d}{\sigma_r}  + \frac{(\boldsymbol{x} - \boldsymbol{w}_r)^2}{\sigma_r^3} \bigg \} P(\boldsymbol{x}^{(\alpha)} | r)
+ \end{align*}
+ 
+ \begin{align*}
+ 	\frac{\partial E^T }{\partial \boldsymbol{w}_r} &= - \sum_{\alpha=1}^{p} \frac{\partial }{\partial \boldsymbol{w}_r}  \ln \bigg( \sum_{q=1}^{M} P( \boldsymbol{x}^{(\alpha)} |q) P(q) \bigg) \\
+ 	&= - \sum_{\alpha=1}^{p} \frac{ P(r)   \frac{\partial }{\partial \boldsymbol{w}_r}  P( \boldsymbol{x}^{(\alpha)} |r)  }{ \sum_{q=1}^{M} P( \boldsymbol{x}^{(\alpha)} |q) P(q) } \\
+ 	&= - \sum_{\alpha=1}^{p} \frac{ P(r)   \frac{ (\boldsymbol{x} - \boldsymbol{w}_r )}{\sigma^2}P( \boldsymbol{x}^{(\alpha)} | r )  }{ \sum_{q=1}^{M} P( \boldsymbol{x}^{(\alpha)} |q) P(q) } \\
+ 	&= - \sum_{\alpha=1}^{p}    \frac{ (\boldsymbol{x} - \boldsymbol{w}_r )}{\sigma^2} \frac{ P(r)P( \boldsymbol{x}^{(\alpha)} | r )  }{  P( \boldsymbol{x}^{(\alpha)}) } \\
+ 	 	&= - \sum_{\alpha=1}^{p}    \frac{ (\boldsymbol{x} - \boldsymbol{w}_r )}{\sigma^2}  P( r | \boldsymbol{x}^{(\alpha)}  ) \\
+ 	 	&\stackrel{!}{=}  0
+ \end{align*}
+ Hence, 
+ \begin{align*}
+ 	\boldsymbol{w}_r = \frac{ \sum_{\alpha=1}^{p} P( r | \boldsymbol{x}^{(\alpha)}  ) \boldsymbol{x}^{(\alpha)} }{ \sum_{\alpha=1}^{p} P( r | \boldsymbol{x}^{(\alpha)}  ) } 
+ \end{align*}
+ 
+Similarly,
+\begin{align*}
+ 	\frac{\partial E^T }{\partial \sigma_r} &= - \sum_{\alpha=1}^{p} \frac{\partial }{\partial \sigma_r}  \ln \bigg( \sum_{q=1}^{M} P( \boldsymbol{x}^{(\alpha)} |q) P(q) \bigg) \\
+ 	&= - \sum_{\alpha=1}^{p} \frac{ P(r)   \frac{\partial }{\partial \sigma_r}  P( \boldsymbol{x}^{(\alpha)} |r)  }{ \sum_{q=1}^{M} P( \boldsymbol{x}^{(\alpha)} |q) P(q) } \\
+ 	&= - \sum_{\alpha=1}^{p} \frac{ P(r)   \bigg \{ -\frac{d}{\sigma_r}  + \frac{(\boldsymbol{x} - \boldsymbol{w}_r)^2}{\sigma_r^3} \bigg \} P( \boldsymbol{x}^{(\alpha)} | r )  }{ \sum_{q=1}^{M} P( \boldsymbol{x}^{(\alpha)} |q) P(q) } \\
+ 	&= - \sum_{\alpha=1}^{p} \frac{   \bigg \{ -\frac{d}{\sigma_r}  + \frac{(\boldsymbol{x} - \boldsymbol{w}_r)^2}{\sigma_r^3} \bigg \} P( \boldsymbol{x}^{(\alpha)} | r ) P(r) }{ P( \boldsymbol{x}^{(\alpha)} ) } \\
+ 	&= - \sum_{\alpha=1}^{p}  \bigg \{ -\frac{d}{\sigma_r}  + \frac{(\boldsymbol{x} - \boldsymbol{w}_r)^2}{\sigma_r^3} \bigg \} P( r |\boldsymbol{x}^{(\alpha)}  ) \\
+ 	&= - \frac{1}{\sigma_r} \sum_{\alpha=1}^{p}  \bigg \{ -d  + \frac{(\boldsymbol{x} - \boldsymbol{w}_r)^2}{\sigma_r^2} \bigg \} P( r |\boldsymbol{x}^{(\alpha)}  )  \\
+ 	 	&= - \frac{1}{\sigma_r^3} \sum_{\alpha=1}^{p}  \bigg \{  -d \sigma_r^2 P( r |\boldsymbol{x}^{(\alpha)}  ) + (\boldsymbol{x} - \boldsymbol{w}_r)^2 P( r |\boldsymbol{x}^{(\alpha)}  )  \bigg \}  \\
+ 	&\stackrel{!}{=} 0
+ \end{align*}
+ Hence,
+ \begin{align*}
+ 	\sigma_r^2 = \frac{1}{d} \frac{  \sum_{\alpha=1}^{p}  (\boldsymbol{x} - \boldsymbol{w}_r)^2 P( r |\boldsymbol{x}^{(\alpha)}  )   } { \sum_{\alpha=1}^{p}  P( r |\boldsymbol{x}^{(\alpha)}  )  } 
+ \end{align*}
+ 
+ For $P(q)$,we use Lagrange Multiplier as follow:
+ 
+ \begin{align*}
+ 	\frac{\partial}{ \partial P(r) } \bigg \{ E^T + \lambda\bigg( \sum_{q=1}^{M} P(q) -1 \bigg)\bigg \} \stackrel{!}{=} 0
+ \end{align*}
+  \begin{align*}
+ 	\frac{\partial}{ \partial P(r) } \bigg \{ E^T + \lambda\bigg( \sum_{q=1}^{M} P(q) -1 \bigg)\bigg \} &=  	\frac{\partial}{ \partial P(r) } \bigg \{ - \sum_{\alpha=1}^{p} \ln \sum_{q=1}^{M} P(\boldsymbol{x}^{(\alpha)}|q) P(q) + \lambda\bigg( \sum_{q=1}^{M} P(q) -1 \bigg)\bigg \} \\
+ 	&= - \sum_{\alpha=1}^{p} \frac{P(\boldsymbol{x}^{(\alpha)}|r)}{\sum_{q=1}^{M} P(\boldsymbol{x}^{(\alpha)}|q) P(q)} + \lambda \\
+ 	 &= - \sum_{\alpha=1}^{p} \frac{P(\boldsymbol{x}^{(\alpha)}|r)}{ P(\boldsymbol{x}^{(\alpha)}) } + \lambda \\
+ 	  &= - \sum_{\alpha=1}^{p} \frac{ P(\boldsymbol{x}^{(\alpha)}, r) }{ P(r) P(\boldsymbol{x}^{(\alpha)}) } + \lambda \\
+ 	  &= - \sum_{\alpha=1}^{p} \frac{ P(r | \boldsymbol{x}^{(\alpha)}) }{ P(r) } + \lambda
+ \end{align*}
+ Hence,
+ \begin{align*}
+ 	P(r) = \frac{1}{\lambda} \sum_{\alpha=1}^{p}  P(r | \boldsymbol{x}^{(\alpha)})
+ \end{align*}
+ and because 
+\begin{align*}
+	1 &= \sum_{q=1}^{M} P(q)  \\
+	&= \sum_{q=1}^{M} \frac{1}{\lambda} \sum_{\alpha=1}^{p}  P(q | \boldsymbol{x}^{(\alpha)}) \\
+	&= \frac{1}{\lambda}  \sum_{\alpha=1}^{p} \sum_{q=1}^{M}  P(q | \boldsymbol{x}^{(\alpha)}) \\	
+	&= \frac{1}{\lambda}  \sum_{\alpha=1}^{p} 1 \\	
+	&= \frac{1}{\lambda}  p \\	
+\end{align*}
+Therefore,
+\begin{align*}
+ 	P(r) = \frac{1}{p} \sum_{\alpha=1}^{p}  P(r | \boldsymbol{x}^{(\alpha)})
+\end{align*}
+
+\subsubsection{Expectation Maximization Algorithm}
+
+\begin{algorithm}[H]
+\caption{EM Algorithm}
+ \KwData{ choose of no. Gaussian ( clusters ) $M$}
+ \KwData{Initialize $P(q) = \frac{1}{M}$}
+ \KwData{Initialize $\boldsymbol{w}_q  = \frac{1}{p} \sum_{\alpha=1}^{p} \boldsymbol{x}^{(\alpha)} + \eta_q $,  $\sigma^2_q  = \frac{1}{p} \sum_{\alpha=1}^{p} (\boldsymbol{x}^{(\alpha)} - \boldsymbol{\mu})^2 + \epsilon_q $ }, $\eta_q, \epsilon_q$ is random vectors.
+
+\While{until converage}{
+\text{E-step} : $\forall q = \{1, ..., M\}$
+
+$$P(q| \boldsymbol{x}^{(\alpha)} ) \leftarrow \frac{P(\boldsymbol{x}^{(\alpha)} | q ) P(q) }{\sum_{r=1}^{M} P(\boldsymbol{x}^{(\alpha)} | r ) P(r)}$$
+
+\text{M-step} : $\forall q = \{1, ..., M\}$ 
+
+\begin{align*}
+   \boldsymbol{w}_q^{new} &\leftarrow \frac{ \sum_{\alpha=1}^{p} P( q | \boldsymbol{x}^{(\alpha)}  ) \boldsymbol{x}^{(\alpha)} }{ \sum_{\alpha=1}^{p} P( q | \boldsymbol{x}^{(\alpha)}  ) } \\
+   (\sigma^2_q)^{new} &\leftarrow \frac{ \sum_{\alpha=1}^{p} P( q | \boldsymbol{x}^{(\alpha)}  ) ( \boldsymbol{x} ^{(\alpha)} - \boldsymbol{w}_q)^2 }{ \sum_{\alpha=1}^{p} P( q | \boldsymbol{x}^{(\alpha)}  ) } \\
+	P(q) &\leftarrow \frac{1}{p} \sum_{\alpha=1}^{p}  P(q | \boldsymbol{x}^{(\alpha)})
+\end{align*}
+}
+% \For{$\alpha = \text{shuffle}(\{1,\dots, p \})$}{
+% Find the closest prototype : $p = \underset{r}{\text{argmin}} \sum_q h_{rq} ( \boldsymbol{x}^{(\alpha)} - \boldsymbol{w}_q )^2 $
+% 
+%$\whileboolexpr q$ : update $\boldsymbol{w}_q$ respect to :
+% \begin{align*}
+% 	h_{qp}  &= \exp{ \bigg (  - \frac{(p-q)^2}{2\sigma^2} \bigg) } \tag*{(Neighborhood function)} \\
+% 	\Delta\boldsymbol{w}_q &= \epsilon h_{qp} ( \boldsymbol{x}^{(\alpha)} - \boldsymbol{w}_q ) 
+% \end{align*}
+% }
+\end{algorithm}
+
+\subsubsection{Proof of EM algorithm}
+Given $\boldsymbol{x}^{(\alpha)} \in \mathbb{R}^N, \alpha \in  \{1, ..., p\}$ and $\boldsymbol{m}^{(\alpha)} = \{ m^{(\alpha)}_1, ... ,m^{(\alpha)}_M  \}^T \in \{0,1\}^M$ where $m^{(\alpha)}_q = 1$ if component $q$ generates $\boldsymbol{x}^{(\alpha)}$, otherwise $0$. We call these $\boldsymbol{m}^{(\alpha)}$ latent variables.
+
+Latent variables and maximum likelihood, 
+\begin{align*}
+ P(\{ \boldsymbol{x}^{(\alpha)} \} |  \boldsymbol{\theta} ) 
+ &= \prod_{\alpha=1}^{p}  P(\boldsymbol{x}^{(\alpha)} |  \boldsymbol{\theta} ) \\
+ &=  \prod_{\alpha=1}^{p}  P(\boldsymbol{x}^{(\alpha)} , \boldsymbol{m}^{(\alpha)}  )  \\
+ &\stackrel{!}{=} \max 
+\end{align*}
+
+We know that :
+$$
+ 	0 \le P(q) \le 1 \ \text{and} \ \sum_{q=1}^M P(q) = 1 	
+$$
+\begin{align*}
+	P(\boldsymbol{x}| \boldsymbol{\theta} ) &= \sum_{q=1}^{M} P(q) \mathcal{N}( \boldsymbol{x} | \boldsymbol{w}_q, \sigma_q^2 ) \\
+	&= \sum_{\boldsymbol{m}} P(\boldsymbol{x},  \boldsymbol{m}) \\
+	&= \sum_{\boldsymbol{m}} P(\boldsymbol{x} | \boldsymbol{m}) P(\boldsymbol{m})
+\end{align*}
+and the prior distribution : 
+\begin{align*}
+	P(\boldsymbol{m}) = \prod_{q=1}^{M} P(q)^{m_q}
+\end{align*}
+similarly,
+\begin{align*}
+ P(\boldsymbol{x} | \boldsymbol{m}) &= \prod_{q=1}^{M} \mathcal{N}( \boldsymbol{x} | \boldsymbol{w}_q, \sigma_q^2 )^{m_q}
+\end{align*}
+Hence, 
+\begin{align*}
+	P(\boldsymbol{x}, \boldsymbol{m}) =\prod_{q=1}^{M} P(q)^{m_q} \mathcal{N}( \boldsymbol{x} | \boldsymbol{w}_q, \sigma_q^2 )^{m_q}
+\end{align*}
+Therefore,
+
+\begin{align*}
+\boldsymbol{\theta}^* &= \underset{ \{ P(q) \}, \{ \boldsymbol{w}_q \}, \{ \sigma^2_q \} }{\text{argmax}} \prod_{\alpha=1}^{p} \prod_{q=1}^{M} P(q)^{m_q^{(\alpha)}} \mathcal{N}( \boldsymbol{x}^{(\alpha)}| \boldsymbol{w}_q, \sigma_q^2 )^{m_q^{(\alpha)}}\\
+&= \text{argmax} \sum_{\alpha=1}^{p} \sum_{q=1}^{M} \ln P(q)^{m_q^{(\alpha)}} \mathcal{N}( \boldsymbol{x}^{(\alpha)} | \boldsymbol{w}_q, \sigma_q^2 )^{m_q^{(\alpha)}}\\
+&= \text{argmax} \sum_{\alpha=1}^{p} \sum_{q=1}^{M} m_q^{(\alpha)} \bigg ( \ln P(q) + \ln \mathcal{N}( \boldsymbol{x}^{(\alpha)} | \boldsymbol{w}_q, \sigma_q^2 ) \bigg)\\
+&= \text{argmin} - \sum_{\alpha=1}^{p} \sum_{q=1}^{M} m_q^{(\alpha)} \bigg ( \ln P(q) + \ln \mathcal{N}( \boldsymbol{x}^{(\alpha)} | \boldsymbol{w}_q, \sigma_q^2 ) \bigg)\\
+\end{align*}
+
+Posterior distribution :
+\begin{align*}
+	P(\boldsymbol{m} | \boldsymbol{x} ) = \frac{P(\boldsymbol{x}, \boldsymbol{m})}{P(\boldsymbol{x})} = \frac{\prod_{q=1}^{M} [P(q) \mathcal{N}( \boldsymbol{x} | \boldsymbol{w}_q, \sigma_q^2 )]^{m_q}}{ \sum_{	q=1}^{M} P(q) \mathcal{N}( \boldsymbol{x} | \boldsymbol{w}_q, \sigma_q^2 )}
+\end{align*}
+Hence, posterior distribution of all hidden varibles
+\begin{align*}
+P( \{ \boldsymbol{m}^{(\alpha)} \}| \{ \boldsymbol{x}^{(\alpha)} \}, \boldsymbol{\theta} ) &= \prod_{\alpha=1}^p \frac{\prod_{q=1}^{M} [P(q) \mathcal{N}( \boldsymbol{x}^{(\alpha)} | \boldsymbol{w}_q^{(\alpha)}, \sigma_q^2 )]^{m_q}}{ \sum_{	q=1}^{M} P(q) \mathcal{N}( \boldsymbol{x}^{(\alpha)} | \boldsymbol{w}_q^{(\alpha)}, \sigma_q^2 )}
+\end{align*}
+
+Therefore, 
+
+\begin{align*}
+%todo show this derivationl
+	\langle m_q^{(\alpha)} \rangle_{P( \{ \boldsymbol{m}^{(\alpha)} \}| \{ \boldsymbol{x}^{(\alpha)} \}, \boldsymbol{\theta} ) } = P(q|\boldsymbol{x}^{(\alpha)})
+\end{align*}
